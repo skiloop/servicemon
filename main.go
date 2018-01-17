@@ -34,34 +34,56 @@ func (Args) Version() string {
 }
 
 func main() {
-	var name string
 	var args Args
 	argParser.MustParse(&args)
+	if args.Forground {
+		//fmt.Fprintln(os.Stderr, "run in foreground")
+		runService(&args)
+	} else {
+		//fmt.Fprintln(os.Stderr, "prepare to run in daemon")
+		context := new(daemon.Context)
+		child, err := context.Reborn()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unable to run: %v\n", err)
+		}
+		if child != nil {
+			// parent process go here
+			return
+		}
+		defer context.Release()
+		//fmt.Fprintln(os.Stderr, "run in daemon")
+		go runService(&args)
+	}
+}
+
+func runService(args *Args) {
+	var name string
 	if len(os.Args) == 0 {
 		name = "servicemon"
 	} else {
 		name = filepath.Base(os.Args[0])
 	}
 	// initial log
-	fmt.Println(args)
+	//fmt.Println(args)
 	logFile := os.Stdout
-	if args.Verbose {
-		var err error
-		if args.Output != "" {
-			logFile, err = os.Open(args.Output)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "cannot open file: %s", args.Output)
-				return
-			}
-			defer logFile.Close()
-			defer logger.Init(name, true, false, logFile).Close()
-		} else {
-			defer logger.Init(name, false, false, os.Stdout).Close()
+
+	var err error
+	if args.Output != "" {
+		//fmt.Println(args.Output)
+		logFile, err = os.OpenFile(args.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to open log file: %v", err)
 		}
-	} else {
-		logFile, _ = os.Open(os.DevNull)
-		defer logger.Init(name, false, true, logFile).Close()
+		if logFile == nil {
+			fmt.Fprintf(os.Stderr, "cannot open file: %s", args.Output)
+			return
+		}
+		defer logFile.Close()
+		defer logger.Init(name, false, false, logFile).Close()
+	} else if args.Verbose {
+		defer logger.Init(name, false, false, os.Stdout).Close()
 	}
+
 	logger.Info(name)
 
 	var chk *monitor.Checker
@@ -82,27 +104,6 @@ func main() {
 		}
 		altSrv = &monitor.Service{Checker: chk, Program: cmd, Options: strings.Split(args.SecondaryOptions, " "), LogFile: logFile}
 	}
-	if args.Forground {
-		logger.Info("run in foreground")
-		runService(&args, srv, altSrv)
-	} else {
-		logger.Info("prepare to run in daemon")
-		context := new(daemon.Context)
-		child, err := context.Reborn()
-		if err != nil {
-			logger.Fatal("unable to run:", err)
-		}
-		if child != nil {
-			logger.Error("child not nil")
-			return
-		}
-		defer context.Release()
-		logger.Info("run in daemon")
-		go runService(&args, srv, altSrv)
-	}
-}
-
-func runService(args *Args, srv, altSrv *monitor.Service) {
 	var curSrv *monitor.Service
 	curSrv = srv
 	if args.Restart {
