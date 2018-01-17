@@ -8,10 +8,13 @@ import (
 	"github.com/google/logger"
 	argParser "github.com/alexflint/go-arg"
 	"strings"
+	"path/filepath"
+	"github.com/sevlyar/go-daemon"
 )
 
 type Args struct {
 	Verbose          bool     `arg:"-v" help:"verbose"`
+	Forground        bool     `arg:"-f" help:"work in forground"`
 	Restart          bool     `arg:"-r" help:"restart after instance exit"`
 	RestartDelay     int64    `arg:"-d,--restart-delay" help:"restart delay"`
 	Output           string   `arg:"-o" help:"output file"`
@@ -31,8 +34,14 @@ func (Args) Version() string {
 }
 
 func main() {
+	var name string
 	var args Args
 	argParser.MustParse(&args)
+	if len(os.Args) == 0 {
+		name = "servicemon"
+	} else {
+		name = filepath.Base(os.Args[0])
+	}
 	// initial log
 	fmt.Println(args)
 	logFile := os.Stdout
@@ -45,15 +54,15 @@ func main() {
 				return
 			}
 			defer logFile.Close()
-			defer logger.Init("main", true, false, logFile).Close()
+			defer logger.Init(name, true, false, logFile).Close()
 		} else {
-			defer logger.Init("main", false, false, os.Stdout).Close()
+			defer logger.Init(name, false, false, os.Stdout).Close()
 		}
 	} else {
 		logFile, _ = os.Open(os.DevNull)
-		defer logger.Init("main", false, true, logFile).Close()
+		defer logger.Init(name, false, true, logFile).Close()
 	}
-	logger.Info("main")
+	logger.Info(name)
 
 	var chk *monitor.Checker
 	if args.Checker != "" {
@@ -73,6 +82,27 @@ func main() {
 		}
 		altSrv = &monitor.Service{Checker: chk, Program: cmd, Options: strings.Split(args.SecondaryOptions, " "), LogFile: logFile}
 	}
+	if args.Forground {
+		logger.Info("run in foreground")
+		runService(&args, srv, altSrv)
+	} else {
+		logger.Info("prepare to run in daemon")
+		context := new(daemon.Context)
+		child, err := context.Reborn()
+		if err != nil {
+			logger.Fatal("unable to run:", err)
+		}
+		if child != nil {
+			logger.Error("child not nil")
+			return
+		}
+		defer context.Release()
+		logger.Info("run in daemon")
+		go runService(&args, srv, altSrv)
+	}
+}
+
+func runService(args *Args, srv, altSrv *monitor.Service) {
 	var curSrv *monitor.Service
 	curSrv = srv
 	if args.Restart {
@@ -103,5 +133,4 @@ func main() {
 			}
 		}
 	}
-
 }
