@@ -52,7 +52,7 @@ func main() {
 		}
 		defer context.Release()
 		//fmt.Fprintln(os.Stderr, "run in daemon")
-		go runService(&args)
+		runService(&args)
 	}
 }
 
