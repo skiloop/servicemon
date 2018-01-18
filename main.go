@@ -14,7 +14,7 @@ import (
 
 type Args struct {
 	Verbose          bool     `arg:"-v" help:"verbose"`
-	Forground        bool     `arg:"-f" help:"work in forground"`
+	Foreground       bool     `arg:"-f" help:"work in foreground"`
 	Restart          bool     `arg:"-r" help:"restart after instance exit"`
 	RestartDelay     int64    `arg:"-d,--restart-delay" help:"restart delay"`
 	Output           string   `arg:"-o" help:"output file"`
@@ -36,7 +36,7 @@ func (Args) Version() string {
 func main() {
 	var args Args
 	argParser.MustParse(&args)
-	if args.Forground {
+	if args.Foreground {
 		//fmt.Fprintln(os.Stderr, "run in foreground")
 		runService(&args)
 	} else {
