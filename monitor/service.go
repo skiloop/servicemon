@@ -116,6 +116,7 @@ func (srv *Service) checkProgram() bool {
 	cmd.Stdout = srv.LogFile
 	cmd.Stderr = srv.LogFile
 	cmd.Stdin = os.Stdin
+
 	srv.cmd = cmd
 	srv.copyEnv()
 	return true

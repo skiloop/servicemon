@@ -10,6 +10,7 @@ import (
 	"strings"
 	"path/filepath"
 	"github.com/sevlyar/go-daemon"
+	"syscall"
 )
 
 type Args struct {
@@ -21,6 +22,7 @@ type Args struct {
 	Env              []string `arg:"-e,separate" help:"env for service, can use more than once"`
 	Checker          string   `arg:"-c" help:"script to check if process is healthy, if not healthy then program will stop"`
 	Interval         int64    `arg:"-i" help:"checker interval"`
+	Limit            uint64   `arg:"-l" help:"set open files limit"`
 	Delay            int64    `arg:"-D" help:"checker delay after service start"`
 	Result           string   `arg:"-R" help:"healthy checker result"`
 	SecondaryCmd     string   `arg:"-s,--secondary-cmd" help:"secondary command, secondary will start when primary service is not healthy "`
@@ -85,6 +87,21 @@ func runService(args *Args) {
 	}
 
 	logger.Info(name)
+	if args.Limit > 0 {
+		rlimit := syscall.Rlimit{}
+		err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rlimit)
+		if err != nil {
+			logger.Warningf("get rlimit error: %v", err)
+		} else {
+			logger.Infof("program number of open files: cur=%d, max=%d", rlimit.Cur, rlimit.Max)
+			rlimit.Cur = args.Limit
+			if rlimit.Cur > rlimit.Max {
+				rlimit.Max = rlimit.Cur
+			}
+			syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rlimit)
+		}
+		logger.Infof("open file limit %d", args.Limit)
+	}
 
 	var chk *monitor.Checker
 	if args.Checker != "" {
