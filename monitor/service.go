@@ -15,8 +15,8 @@ type Checker struct {
 	CMD      string
 	Options  string
 	OkResult string
-	Interval int64
-	Delay    int64
+	Interval time.Duration
+	Delay    time.Duration
 	running  bool
 	cmdPath  string
 	cmd      exec.Cmd
@@ -74,8 +74,8 @@ func (c *Checker) check() bool {
 
 func (c *Checker) Run(callback func()) {
 	c.running = true
-	time.Sleep(time.Duration(c.Delay * time.Second.Nanoseconds()))
-	duration := time.Duration(c.Interval * time.Second.Nanoseconds())
+	time.Sleep(c.Delay)
+
 	for ; c.running; {
 		if !c.check() {
 			logger.Info("service check failed")
@@ -83,7 +83,7 @@ func (c *Checker) Run(callback func()) {
 			callback()
 			break
 		}
-		time.Sleep(duration)
+		time.Sleep(c.Interval)
 	}
 	logger.Info("checker ends")
 }

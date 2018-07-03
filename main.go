@@ -14,25 +14,25 @@ import (
 )
 
 type Args struct {
-	Verbose          bool     `arg:"-v" help:"verbose"`
-	Foreground       bool     `arg:"-f" help:"work in foreground"`
-	Restart          bool     `arg:"-r" help:"restart after instance exit"`
-	RestartDelay     int64    `arg:"-d,--restart-delay" help:"restart delay"`
-	Output           string   `arg:"-o" help:"output file"`
-	Env              []string `arg:"-e,separate" help:"env for service, can use more than once"`
-	Checker          string   `arg:"-c" help:"script to check if process is healthy, if not healthy then program will stop"`
-	Interval         int64    `arg:"-i" help:"checker interval"`
-	Limit            uint64   `arg:"-l" help:"set open files limit"`
-	Delay            int64    `arg:"-D" help:"checker delay after service start"`
-	Result           string   `arg:"-R" help:"healthy checker result"`
-	SecondaryCmd     string   `arg:"-s,--secondary-cmd" help:"secondary command, secondary will start when primary service is not healthy "`
-	SecondaryOptions string   `arg:"-O,--secondary-options" help:"secondary options, if secondary command is not set then this is the secondary options for primary command"`
-	PrimaryCmd       string   `arg:"positional,required,-m" help:"primary command"`
-	Options          []string `arg:"positional" help:"primary command options"`
+	Verbose          bool          `arg:"-v" help:"verbose"`
+	Foreground       bool          `arg:"-f" help:"work in foreground"`
+	Restart          bool          `arg:"-r" help:"restart after instance exit"`
+	RestartDelay     time.Duration `arg:"-d,--restart-delay" help:"restart delay, example: 1s"`
+	Output           string        `arg:"-o" help:"output file"`
+	Env              []string      `arg:"-e,separate" help:"additional env for service, multiple values, "`
+	Checker          string        `arg:"-c" help:"script to check if process is healthy, if not healthy then program will stop"`
+	Interval         time.Duration `arg:"-i" help:"checker interval, example: 1s"`
+	Limit            uint64        `arg:"-l" help:"set open files limit"`
+	Delay            time.Duration `arg:"-D" help:"checker delay after service start, example: 1s"`
+	Result           string        `arg:"-R" help:"healthy checker result"`
+	SecondaryCmd     string        `arg:"-s,--secondary-cmd" help:"secondary command, secondary will start when primary service is not healthy "`
+	SecondaryOptions string        `arg:"-O,--secondary-options" help:"secondary options, if secondary command is not set then this is the secondary options for primary command"`
+	PrimaryCmd       string        `arg:"positional,required,-m" help:"primary command"`
+	Options          []string      `arg:"positional" help:"primary command options"`
 }
 
 func (Args) Version() string {
-	return "0.1.0"
+	return "v0.1.0"
 }
 
 func main() {
@@ -138,7 +138,7 @@ func runService(args *Args) {
 				}
 			}
 			if args.Delay > 0 {
-				time.Sleep(time.Duration(args.Delay * time.Second.Nanoseconds()))
+				time.Sleep(args.Delay)
 			}
 		}
 	} else {
