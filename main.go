@@ -110,7 +110,7 @@ func runService(args *Args) {
 		chk = nil
 	}
 
-	srv := &monitor.Service{Checker: chk, Program: args.PrimaryCmd, Options: args.Options, LogFile: logFile}
+	srv := &monitor.Service{Checker: chk, Program: args.PrimaryCmd, Options: args.Options, LogFile: logFile, AdditionalEnv: args.Env}
 	var altSrv *monitor.Service
 	if args.SecondaryCmd != "" || args.SecondaryOptions != "" {
 		var cmd string
@@ -119,7 +119,7 @@ func runService(args *Args) {
 		} else {
 			cmd = args.PrimaryCmd
 		}
-		altSrv = &monitor.Service{Checker: chk, Program: cmd, Options: strings.Split(args.SecondaryOptions, " "), LogFile: logFile}
+		altSrv = &monitor.Service{Checker: chk, Program: cmd, Options: strings.Split(args.SecondaryOptions, " "), LogFile: logFile, AdditionalEnv: args.Env}
 	}
 	var curSrv *monitor.Service
 	curSrv = srv
