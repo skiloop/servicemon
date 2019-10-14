@@ -1,5 +1,7 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/skiloop/servicemon)](https://goreportcard.com/report/github.com/skiloop/servicemon)
+
 servicemon
-========
+===========
 Service Monitor, a tool to guard service, automatic check availability of a service and restart or switch to alternative
 
 ### usage
