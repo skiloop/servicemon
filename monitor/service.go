@@ -1,16 +1,17 @@
 package monitor
 
 import (
-	"io"
-	"time"
-	"github.com/google/logger"
-	"os/exec"
-	"os"
-	"errors"
 	"bytes"
+	"errors"
+	"github.com/google/logger"
+	"io"
+	"os"
+	"os/exec"
 	"strings"
+	"time"
 )
 
+// Checker service health checker
 type Checker struct {
 	CMD      string
 	Options  string
@@ -23,6 +24,7 @@ type Checker struct {
 	buffer   bytes.Buffer
 }
 
+// Service a service definition
 type Service struct {
 	Program       string
 	Options       []string
@@ -72,11 +74,12 @@ func (c *Checker) check() bool {
 	return c.OkResult == res
 }
 
+// Run check service health
 func (c *Checker) Run(callback func()) {
 	c.running = true
 	time.Sleep(c.Delay)
 
-	for ; c.running; {
+	for c.running {
 		if !c.check() {
 			logger.Info("service check failed")
 			c.running = false
@@ -97,6 +100,7 @@ func (srv *Service) copyEnv() {
 		logger.Error("nil cmd or cmd Env")
 	}
 }
+
 func (srv *Service) checkProgram() bool {
 	logger.Info("check program")
 	if srv.Checker != nil {
@@ -122,6 +126,7 @@ func (srv *Service) checkProgram() bool {
 	return true
 }
 
+// Run run service
 func (srv *Service) Run() error {
 	if !srv.checkProgram() {
 		return errors.New("service check failed")
@@ -136,12 +141,15 @@ func (srv *Service) Run() error {
 	}
 	return err
 }
+
+// Stop stop service
 func (srv *Service) Stop() {
 	if srv.cmd != nil {
-		srv.cmd.Process.Kill()
+		_ = srv.cmd.Process.Kill()
 		srv.cmd = nil
 	}
 }
+
 func (srv *Service) start() error {
 	logger.Info("start service")
 	err := srv.cmd.Start()
